@@ -22,24 +22,31 @@ namespace NatsLibrary.Core.Services
         /// </summary>
         public async Task PublishAsync<T>(string subject, T message)
         {
-            if (string.IsNullOrWhiteSpace(subject))
-                throw new ArgumentException("Subject cannot be null or empty", nameof(subject));
-
-            // Serialize message to JSON
-            var payload = JsonSerializerHelper.Serialize(message);
-            var data = Encoding.UTF8.GetBytes(payload);
-
-            // Use JetStream if available
-            if (_natsService.JetStream != null)
+            try
             {
-                // JetStream publish
-                await Task.Run(() => _natsService.JetStream.Publish(subject, data));
+                if (string.IsNullOrWhiteSpace(subject))
+                    throw new ArgumentException("Subject cannot be null or empty", nameof(subject));
+
+                // Serialize message to JSON
+                var payload = JsonSerializerHelper.Serialize(message);
+                var data = Encoding.UTF8.GetBytes(payload);
+
+                // Use JetStream if available
+                if (_natsService.JetStream != null)
+                {
+                    // JetStream publish
+                    await Task.Run(() => _natsService.JetStream.Publish(subject, data));
+                }
+                else
+                {
+                    // Normal NATS publish
+                    _natsService.Connection.Publish(subject, data);
+                    _natsService.Connection.Flush();
+                }
             }
-            else
+            catch(Exception ex)
             {
-                // Normal NATS publish
-                _natsService.Connection.Publish(subject, data);
-                _natsService.Connection.Flush();
+               Console.WriteLine($"Error publishing message to subject '{subject}': {ex.Message}");
             }
         }
     }

@@ -17,5 +17,6 @@ namespace NatsLibrary.Core.Interfaces
         /// <param name="queueGroup">Optional queue group for load balancing</param>
         /// 
         Task SubscribeAsync<T>(string subject, Func<T, Task> handler, string? queueGroup = null, CancellationToken cancellationToken = default);
+
     }
 }
