@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NatsLibrary.Core\NatsLibrary.Core.csproj" />
+    <ProjectReference Include="..\PublisherApp\PublisherApp.csproj" />
   </ItemGroup>
 
   <ItemGroup>

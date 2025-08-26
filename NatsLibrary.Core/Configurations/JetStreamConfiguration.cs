@@ -1,34 +1,8 @@
 ﻿using System;
+using NATS.Client.JetStream;
 
 namespace NatsLibrary.Core.Configurations;
 
-/// <summary>
-/// Storage types for JetStream
-/// </summary>
-public enum StorageType
-{
-    Memory,
-    File
-}
-
-/// <summary>
-/// Retention policies for JetStream
-/// </summary>
-public enum RetentionPolicy
-{
-    Limits,
-    Interest,
-    WorkQueue
-}
-
-/// <summary>
-/// Discard policy when stream reaches limits
-/// </summary>
-public enum DiscardPolicy
-{
-    Old, // Discard oldest messages
-    New  // Reject new messages
-}
 
 /// <summary>
 /// JetStream specific configuration

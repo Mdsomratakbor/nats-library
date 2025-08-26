@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NatsLibrary.Core.Extensions;
 using NatsLibrary.Core.Interfaces;
+using NATS.Client.JetStream;
+using NatsLibrary.Core.Configurations;
 
 
 var configuration = new ConfigurationBuilder()
@@ -29,14 +31,53 @@ var requestReply = serviceProvider.GetRequiredService<IRequestReplyHandler>();
 //    Console.WriteLine($"[Subscriber] Received: {message}");
 //});
 
-_ = subscriber.SubscribeAsync<string>("events.order-create", async message =>
+//_ = subscriber.SubscribeAsync<string>("events.order-create", async message =>
+//{
+//    var order = JsonSerializer.Deserialize<Order>(message);
+//    Console.WriteLine($"📦 Received Order -> Id: {order.Id}, Product: {order.Product}, Quantity: {order.Quantity}");
+//    await Task.Delay(TimeSpan.FromMinutes(10));
+
+//    await Task.CompletedTask;
+//}, (string)null);
+
+
+var options = new SubscriberOptions
 {
-    var order = JsonSerializer.Deserialize<Order>(message);
-    Console.WriteLine($"📦 Received Order -> Id: {order.Id}, Product: {order.Product}, Quantity: {order.Quantity}");
-    await Task.Delay(TimeSpan.FromMinutes(10));
-    
-    await Task.CompletedTask;
-});
+    DurableName = "order-worker",
+    QueueGroup = "order-service",
+    AckPolicy = AckPolicy.Explicit,
+    DeliverPolicy = DeliverPolicy.New,
+    TimeoutMs = 9000,
+    AutoAck = true,
+    MaxDeliver = 5,
+    FilterSubject = null,
+    ReplayPolicy = ReplayPolicy.Instant,
+    MaxAckPending = 100,
+    IdleHeartbeatMs = 10_000,
+    EnableFlowControl = true,
+    FlowControlInterval = TimeSpan.FromSeconds(30)
+};
+
+await subscriber.SubscribeAsync<string>(
+    "events.order-create",
+    async message =>
+    {
+        var order = JsonSerializer.Deserialize<Order>(message);
+        if (order == null)
+            throw new Exception("Invalid order JSON!");
+
+        Console.WriteLine($"📦 Processing Order -> Id: {order.Id}, Product: {order.Product}");
+
+        // simulate possible processing failure
+        if (order.Quantity > 5)
+            throw new Exception("Simulated processing error");
+
+        await Task.Delay(2000); // simulate work
+    },
+    options
+);
+
+
 //// 5️⃣ Queue Group Example
 //_ = queueService.SubscribeQueueAsync<string>("events.queue", "workers", async message =>
 //{

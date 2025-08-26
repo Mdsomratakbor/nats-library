@@ -1,8 +1,11 @@
 ﻿// 1️⃣ Setup Configuration
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NATS.Client.JetStream;
+using NatsLibrary.Core.Configurations;
 using NatsLibrary.Core.Extensions;
 using NatsLibrary.Core.Interfaces;
+using PublisherApp;
 
 var configuration = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: false)
@@ -24,7 +27,10 @@ var requestReply = serviceProvider.GetRequiredService<IRequestReplyHandler>();
 _ = subscriber.SubscribeAsync<string>("events.test", async message =>
 {
     Console.WriteLine($"[Subscriber] Received: {message}");
-});
+}, (string?)null);
+
+
+
 
 // 5️⃣ Queue Group Example
 _ = queueService.SubscribeQueueAsync<string>("events.queue", "workers", async message =>
