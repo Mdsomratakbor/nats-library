@@ -2,8 +2,91 @@
 
 namespace NatsLibrary.Core.Configurations;
 
+/// <summary>
+/// Defines the different subscriber patterns supported by NATS and JetStream.
+/// Determines how messages are consumed from subjects or streams.
+/// </summary>
+public enum SubscriberPattern
+{
+    /// <summary>
+    /// Core NATS synchronous subscriber.
+    /// - Uses <c>SubscribeSync()</c> and <c>NextMessage()</c>.
+    /// - Requires manual polling or a background loop.
+    /// - Simple but blocks the thread while waiting for messages.
+    /// </summary>
+    CoreSync,
+
+    /// <summary>
+    /// Core NATS asynchronous subscriber.
+    /// - Uses <c>SubscribeAsync()</c>.
+    /// - Messages are pushed via event callbacks.
+    /// - Recommended for most scenarios (non-blocking).
+    /// </summary>
+    CoreAsync,
+
+    /// <summary>
+    /// Core NATS queue subscriber (work queue).
+    /// - Multiple subscribers can join the same queue group.
+    /// - Each message is delivered to exactly one member of the group.
+    /// - Provides load balancing between workers.
+    /// </summary>
+    CoreQueue,
+
+    /// <summary>
+    /// JetStream push subscriber.
+    /// - Messages are pushed from the server to the client asynchronously.
+    /// - Supports consumer configuration (durable, ack policy, filters, etc.).
+    /// </summary>
+    JetStreamPush,
+
+    /// <summary>
+    /// JetStream pull subscriber.
+    /// - Client explicitly fetches messages using <c>Fetch()</c>.
+    /// - Provides backpressure control.
+    /// - Useful for batch processing.
+    /// </summary>
+    JetStreamPull,
+
+    /// <summary>
+    /// JetStream queue subscriber.
+    /// - Similar to <see cref="CoreQueue"/> but for JetStream.
+    /// - Multiple consumers share the load of message delivery.
+    /// - Useful for scaling with JetStream durability.
+    /// </summary>
+    JetStreamQueue,
+
+    /// <summary>
+    /// JetStream ordered subscriber.
+    /// - Ensures messages are received in strict order.
+    /// - Automatically handles sequence mismatches by recreating the consumer.
+    /// - Good for use cases where ordering is critical (e.g., event sourcing).
+    /// </summary>
+    JetStreamOrdered
+}
+
+/// <summary>
+/// Configuration options for a subscriber in NATS or JetStream.
+/// Controls subscription mode, acknowledgment behavior, delivery policies,
+/// backpressure settings, and reliability features.
+/// </summary>
 public class SubscriberOptions
 {
+    /// <summary>
+    /// Defines the subscriber pattern (Core NATS, JetStream, Queue, etc.).
+    /// Determines how messages will be consumed.
+    /// Default = <see cref="SubscriberPattern.CoreAsync"/>.
+    /// </summary>
+    public SubscriberPattern Pattern { get; set; } = SubscriberPattern.CoreAsync;
+
+    /// <summary>
+    /// Whether to run the subscriber in a background task.
+    /// - Relevant only for synchronous subscribers (<c>CoreSync</c>, <c>JetStreamPull</c>).
+    /// - If true, messages are consumed continuously in a background loop.
+    /// - If false, the user must call <c>NextMessage()</c> or <c>Fetch()</c> manually.
+    /// </summary>
+    public bool UseBackgroundTask { get; set; } = true;
+
+    public string? StreamName { get; set; }
     /// <summary>
     /// Durable name for JetStream consumer.
     /// - If specified, the server remembers the consumer's state (last acknowledged message).
@@ -46,7 +129,7 @@ public class SubscriberOptions
     /// Prevents blocking indefinitely when no messages are available.
     /// Default = 1000 ms.
     /// </summary>
-    public int TimeoutMs { get; set; } = 1000;
+    public int TimeoutMs { get; set; } = 8000;
 
     /// <summary>
     /// Whether messages should be automatically acknowledged (JetStream).
@@ -55,8 +138,6 @@ public class SubscriberOptions
     /// Default = true.
     /// </summary>
     public bool AutoAck { get; set; } = true;
-
-
 
     // -----------------------------
     // Extra JetStream options
@@ -114,5 +195,17 @@ public class SubscriberOptions
     /// </summary>
     public TimeSpan? FlowControlInterval { get; set; }
 
+    /// <summary>
+    /// Dead-letter subject for failed messages.
+    /// - If specified, messages that exceed <see cref="MaxDeliver"/> attempts
+    ///   are sent to this subject instead of being retried indefinitely.
+    /// - Useful for handling poison messages.
+    /// </summary>
     public string? DeadLetterSubject { get; set; }
+
+
+    // ---- DLQ (Dead Letter) ----
+    public bool EnableDeadLetter { get; set; } = false;
+    public bool AutoCreateDeadLetterStream { get; set; } = false;
+    public string? DeadLetterStreamName { get; set; } // e.g. "DLQ_ORDERS"
 }
