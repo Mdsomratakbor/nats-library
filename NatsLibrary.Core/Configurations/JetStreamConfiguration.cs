@@ -79,4 +79,6 @@ public class JetStreamConfiguration
     /// Allow roll-up headers for subjects (default: false)
     /// </summary>
     public bool AllowRollup { get; set; } = false;
+
+
 }
