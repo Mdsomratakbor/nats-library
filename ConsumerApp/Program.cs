@@ -169,7 +169,7 @@ await _subscriber.SubscribeAsync<string>(
         AutoAck = true
     }
 );
-    
+
 
 //// 5️⃣ Queue Group Example
 //_ = queueService.SubscribeQueueAsync<string>("events.queue", "workers", async message =>
@@ -179,11 +179,11 @@ await _subscriber.SubscribeAsync<string>(
 //});
 
 //// 6️⃣ Request / Reply Example
-//_ = requestReply.ReplyAsync<string, string>("events.request", async request =>
-//{
-//    Console.WriteLine($"[Request Handler] Got request: {request}");
-//    return $"Reply: {request.ToUpper()}";
-//});
+_ = requestReply.ReplyAsync<string, string>("events.request", async request =>
+{
+    Console.WriteLine($"[Request Handler] Got request: {request}");
+    return $"Reply: {request.ToUpper()}";
+});
 
 // 7️⃣ Publish messages
 //await publisher.PublishAsync("events.test", "Hello NATS!");
